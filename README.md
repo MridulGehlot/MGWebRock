@@ -13,6 +13,68 @@ Built and tested with **JDK 22**.
 
 ---
 
+## 📦 Package Structure Overview
+
+The MGWebRock framework is modular and neatly divided into packages.  
+Each package has a specific purpose as described below:
+
+---
+
+### 🧩 `com.mg.webrock.annotation.*`
+
+This package contains **all the custom annotations** used by the framework.
+
+**Included Annotations:**
+- `@Path` — defines base or sub-path for services.
+- `@Get`, `@Post` — specify HTTP methods.
+- `@Forward` — forwards control to another service path.
+- `@InjectApplicationDirectory`, `@InjectApplicationScope`, `@InjectSessionScope`, `@InjectRequestScope` — used for dependency injection.
+- `@InjectRequestParameter` — injects request parameters.
+- `@AutoWired` — enables field-level dependency injection.
+- `@OnStartup` — runs methods on startup.
+- `@SecuredAccess` — adds security verification.
+
+These annotations are lightweight and processed via Java Reflection at runtime by `MGWebRockStarter`.
+
+---
+
+### ⚠️ `com.mg.webrock.exceptions.*`
+
+Contains framework-specific exception classes.
+
+- **`ServiceException`**  
+  A custom exception that can be thrown inside your service methods when you want to indicate business logic errors or invalid conditions.  
+  Example:
+  ```java
+  if(studentId <= 0) {
+      throw new ServiceException("Invalid student ID");
+  }
+
+## 🧱 com.mg.webrock.pojo.*
+
+Contains all core helper classes used internally and for dependency injection.
+| Class                  | Purpose                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ApplicationDirectory` | Provides access to the base directory of the web application. Useful for reading/writing files relative to the deployment root. |
+| `ApplicationScope`     | Wrapper around `ServletContext`. Used to store global attributes accessible across the entire web app.                          |
+| `SessionScope`         | Wrapper around `HttpSession`. Used to store user-specific session data.                                                         |
+| `RequestScope`         | Wrapper around `HttpServletRequest`. Used to manage per-request attributes and parameters.                                      |
+| `Service`              | Internal data structure representing a discovered service — stores annotations, class metadata, and method mappings.            |
+
+## Directory Snapshot:
+```makefile
+D:\tomcat9\webapps\MGWebRock\WEB-INF\classes\com\mg\webrock\pojo
+│
+├── ApplicationDirectory.java
+├── ApplicationScope.java
+├── RequestScope.java
+├── SessionScope.java
+└── Service.java
+```
+
+
+---
+
 ## ⚙️ Important Configuration Notes
 
 ### 1️⃣ `SERVICE_PACKAGE_PREFIX` (Root Package)
@@ -159,12 +221,16 @@ public class StudentService {
 
 ```java
 import com.mg.webrock.annotation.*;
-
+import com.mg.webrock.pojo.*
 @Path("/school")
+@InjectRequestScope
 public class SchoolService {
 
-    @InjectRequestScope
     private RequestScope req;
+    public void setRequestScope(RequestScope rq)
+    {
+        this.req=rq;
+    }
 
     @Path("/add")
     @Post
