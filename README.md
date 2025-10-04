@@ -37,14 +37,14 @@ This defines the base URL prefix for all your service endpoints.
 ```xml
 <context-param>
     <param-name>BaseURL</param-name>
-    <param-value>/schoolService</param-value>
+    <param-value>/api</param-value>
 </context-param>
 ```
 💡 Every request to your framework services will start with this prefix.
 For example:
 ```bash
-http://localhost:8080/testing/schoolService/add
-http://localhost:8080/testing/schoolService/getAll
+http://localhost:8080/testing/api/schoolService/add
+http://localhost:8080/testing/api/schoolService/getAll
 ```
 
 ## 3️⃣ MGWebRock Servlet Mapping
@@ -53,7 +53,7 @@ Your main servlet mapping must match the same base path as above.
 ```xml
 <servlet-mapping>
     <servlet-name>MGWebRock</servlet-name>
-    <url-pattern>/schoolService/*</url-pattern>
+    <url-pattern>/api/*</url-pattern>
 </servlet-mapping>
 ```
 This ensures all incoming URLs with /schoolService/* are handled by the MGWebRock framework.
