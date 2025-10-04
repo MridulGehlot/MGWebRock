@@ -13,6 +13,65 @@ Built and tested with **JDK 22**.
 
 ---
 
+## ⚙️ Important Configuration Notes
+
+### 1️⃣ `SERVICE_PACKAGE_PREFIX` (Root Package)
+This parameter defines the **root package** inside `WEB-INF/classes` where your service classes are located.
+
+```xml
+<context-param>
+    <param-name>SERVICE_PACKAGE_PREFIX</param-name>
+    <param-value>example</param-value>
+</context-param>
+```
+
+## 📁 Example Folder Structure:
+```makefile
+D:\tomcat9\webapps\testing\WEB-INF\classes\example\
+```
+All your annotated Java files (e.g. SchoolService.java, StudentService.java) should be inside this root package folder.
+
+## 2️⃣ BaseURL (Primary Service Mapping)
+
+This defines the base URL prefix for all your service endpoints.
+```xml
+<context-param>
+    <param-name>BaseURL</param-name>
+    <param-value>/schoolService</param-value>
+</context-param>
+```
+💡 Every request to your framework services will start with this prefix.
+For example:
+```bash
+http://localhost:8080/testing/schoolService/add
+http://localhost:8080/testing/schoolService/getAll
+```
+
+## 3️⃣ MGWebRock Servlet Mapping
+
+Your main servlet mapping must match the same base path as above.
+```xml
+<servlet-mapping>
+    <servlet-name>MGWebRock</servlet-name>
+    <url-pattern>/schoolService/*</url-pattern>
+</servlet-mapping>
+```
+This ensures all incoming URLs with /schoolService/* are handled by the MGWebRock framework.
+
+## 4️⃣ Forwarding Notes
+
+When using the @Forward annotation, always use the full path, including the base URL.
+### ✅ Correct:
+```java
+@Forward("/school/add")
+```
+### ❌ Incorrect:
+```java
+@Forward("/add")
+```
+
+---
+
 ## 🧩 Annotation Reference
 
 | Annotation | Target | Description |
