@@ -1,0 +1,145 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>MGWebRock</title>
+<script src="http://localhost:8080/MGWebRock/serveJS"></script>
+</head>
+<body>
+<h1>Status Section</h1>
+<div id='mainStatusSection'></div>
+<hr><br>
+
+<h1>Add Student</h1>
+<label>Name : </label><input type='text' id='addName'><br>
+<label>Gender : </label><input type='text' id='addGender'><br>
+<button type='button' onclick='add()'>Add</button>
+<button type='button' onclick='clearForms()'>Cancel</button>
+<br><hr>
+
+<h1>Update Student</h1>
+<label>Id : </label><input type='text' id='updateId'><br>
+<label>Name : </label><input type='text' id='updateName'><br>
+<label>Gender : </label><input type='text' id='updateGender'><br>
+<button type='button' onclick='update()'>Update</button>
+<button type='button' onclick='clearForms()'>Cancel</button>
+<br><hr>
+
+<h1>Delete Student</h1>
+<label>Id : </label><input type='text' id='deleteId'><br>
+<button type='button' onclick='deleteStudent()'>Delete</button>
+<button type='button' onclick='clearForms()'>Cancel</button>
+<br><hr>
+
+<h1>Get Student By Id</h1>
+<label>Id : </label><input type='text' id='getById'><br>
+<button type='button' onclick='getById()'>Get</button>
+<button type='button' onclick='clearForms()'>Cancel</button>
+<br><hr>
+<div id='byId'></div>
+
+<h1>Get All Students</h1>
+<button type='button' onclick='updateTable()'>Get All Students</button>
+<table id='mainTable' border='1'>
+<tbody>
+</tbody>
+</table>
+<script>
+function getById()
+{
+let id=document.getElementById("getById").value;
+let service=new StudentService();
+service.getById(id).then(function(data){
+var str="Name : "+data.name;
+str+=" ,Gender : "+data.gender;
+updateStatus(str);
+},function(){updateStatus("Invalid Id");});
+}
+function add()
+{
+let name=document.getElementById("addName").value;
+let gender=document.getElementById("addGender").value;
+let s=new Student(0,name,gender);
+let service=new StudentService();
+service.addStudent(s).then(function(){
+updateStatus("Student Added SuccessFully");
+},function(){console.log("Unable To Add Student");});
+}
+function update()
+{
+let id=document.getElementById("updateId").value;
+let name=document.getElementById("updateName").value;
+let gender=document.getElementById("updateGender").value;
+let s=new Student(id,name,gender);
+let service=new StudentService();
+service.update(s).then(function(){
+updateStatus("Student Updated SuccessFully");
+},function(){console.log("Unable To Update Student");});
+}
+function clearForms()
+{
+var name=document.getElementById("addName");
+var gender=document.getElementById("addGender");
+name.value="";
+gender.value="";
+
+document.getElementById("updateId").value="";
+document.getElementById("updateName").value="";
+document.getElementById("updateGender").value="";
+
+document.getElementById("deleteId").value="";
+
+document.getElementById("getById").value="";
+}
+function updateTable()
+{
+let table=document.getElementById("mainTable");
+let tbody = table.querySelector("tbody");
+tbody.innerHTML="";
+let service=new StudentService();
+service.getAll().then(function(data){
+var i;
+let tr,td;
+tr=document.createElement("tr");
+td=document.createElement("th");
+td.innerHTML="ID";
+tr.appendChild(td);
+td=document.createElement("th");
+td.innerHTML="Name";
+tr.appendChild(td);
+td=document.createElement("th");
+td.innerHTML="Gender";
+tr.appendChild(td);
+tbody.appendChild(tr);
+for(i=0;i<data.length;i++)
+{
+var student=data[i];
+tr=document.createElement("tr");
+td=document.createElement("td");
+td.innerHTML=student.id;
+tr.appendChild(td);
+td=document.createElement("td");
+td.innerHTML=student.name;
+tr.appendChild(td);
+td=document.createElement("td");
+td.innerHTML=student.gender;
+tr.appendChild(td);
+tbody.appendChild(tr);
+}
+},function(error){console.log(error);});
+}
+function deleteStudent()
+{
+let id=document.getElementById("deleteId").value;
+let service=new StudentService();
+service.deleteStudent(id).then(function(){
+updateStatus("Student Deleted Successfully");
+},function(){console.log("Unable To Delete");});
+}
+function updateStatus(msg)
+{
+let dd=document.getElementById("mainStatusSection");
+dd.innerHTML=msg;
+}
+</script>
+</body>
+</html>
