@@ -54,6 +54,7 @@ if(ff.getAbsolutePath().endsWith(".class")) classesToScan.add(ff);
 }//for loop ends here
 }
 
+/*
 public static void exportToPDF(String pdfFilePath, String pathToClassesFolder) {
     Document document = new Document(PageSize.A4, 40, 40, 40, 40);
     try {
@@ -220,6 +221,164 @@ public static void exportToPDF(String pdfFilePath, String pathToClassesFolder) {
         }
 
         // Footer
+        Paragraph footer = new Paragraph("Software By : Mridul Gehlot (CEO @ MGCompanies)", footerFont);
+        footer.setAlignment(Element.ALIGN_CENTER);
+        footer.setSpacingBefore(20f);
+        document.add(footer);
+
+        document.close();
+        System.out.println("PDF created successfully at " + pdfFilePath);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+*/
+public static void exportToPDF(String pdfFilePath, String pathToClassesFolder) {
+    Document document = new Document(PageSize.A4, 40, 40, 40, 40);
+    ArrayList<String> errorLogs = new ArrayList<>();
+
+    try {
+        PdfWriter.getInstance(document, new FileOutputStream(pdfFilePath));
+        document.open();
+
+        // --- FONT STYLES ---
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
+        Font classFont = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD, BaseColor.BLACK);
+        Font bulletFont = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL, BaseColor.DARK_GRAY);
+        Font tableHeaderFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD, BaseColor.WHITE);
+        Font tableCellFont = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL, BaseColor.BLACK);
+        Font footerFont = new Font(Font.FontFamily.HELVETICA, 12, Font.ITALIC, BaseColor.RED);
+        Font errorHeaderFont = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLDITALIC, BaseColor.RED);
+        Font errorFont = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL, BaseColor.RED);
+
+        // --- HEADER ---
+        Paragraph header = new Paragraph("MG Companies", headerFont);
+        header.setAlignment(Element.ALIGN_CENTER);
+        header.setSpacingAfter(20f);
+        document.add(header);
+
+        // --- MAIN CLASS LOOP ---
+        for (File f : classesToScan) {
+            try {
+                String absolutePath = f.getAbsolutePath();
+                String basePackagePath = pathToClassesFolder + File.separator;
+                String relativePath = absolutePath.substring(basePackagePath.length());
+                String classNameWithSlashes = relativePath.substring(0, relativePath.length() - ".class".length());
+                String className = classNameWithSlashes.replace('\\', '.').replace('/', '.');
+
+                Class<?> c = Class.forName(className);
+                if (!c.isAnnotationPresent(com.mg.webrock.annotation.Path.class)) continue;
+
+                // --- CLASS NAME ---
+                Paragraph classNamePara = new Paragraph("Class : " + className, classFont);
+                classNamePara.setSpacingBefore(15f);
+                classNamePara.setSpacingAfter(8f);
+                document.add(classNamePara);
+
+                // --- CLASS PATH ---
+                com.mg.webrock.annotation.Path classPathAnno = c.getAnnotation(com.mg.webrock.annotation.Path.class);
+                document.add(new Paragraph("Class Path : " + classPathAnno.value(), bulletFont));
+
+                // --- BULLET LIST ---
+                com.itextpdf.text.List bulletList = new com.itextpdf.text.List(com.itextpdf.text.List.UNORDERED);
+                bulletList.setSymbolIndent(12f);
+
+                if (c.isAnnotationPresent(com.mg.webrock.annotation.InjectApplicationDirectory.class))
+                    bulletList.add(new ListItem("InjectApplicationDirectory", bulletFont));
+                if (c.isAnnotationPresent(com.mg.webrock.annotation.InjectApplicationScope.class))
+                    bulletList.add(new ListItem("InjectApplicationScope", bulletFont));
+                if (c.isAnnotationPresent(com.mg.webrock.annotation.InjectSessionScope.class))
+                    bulletList.add(new ListItem("InjectSessionScope", bulletFont));
+                if (c.isAnnotationPresent(com.mg.webrock.annotation.InjectRequestScope.class))
+                    bulletList.add(new ListItem("InjectRequestScope", bulletFont));
+
+                for (Field field : c.getDeclaredFields()) {
+                    if (field.isAnnotationPresent(com.mg.webrock.annotation.AutoWired.class))
+                        bulletList.add(new ListItem("AutoWired : " + field.getName(), bulletFont));
+                    if (field.isAnnotationPresent(com.mg.webrock.annotation.InjectRequestParameter.class))
+                        bulletList.add(new ListItem("InjectRequestParameter : " + field.getName(), bulletFont));
+                }
+                if (c.isAnnotationPresent(com.mg.webrock.annotation.SecuredAccess.class))
+                    bulletList.add(new ListItem("SecuredAccess : YES", bulletFont));
+
+                if (bulletList.size() > 0) {
+                    document.add(bulletList);
+                    document.add(Chunk.NEWLINE);
+                }
+
+                // --- SERVICE TABLE ---
+                PdfPTable table = new PdfPTable(7);
+                table.setWidthPercentage(100);
+                table.setSpacingBefore(10f);
+                table.setSpacingAfter(15f);
+                table.setWidths(new float[]{2.5f, 2.5f, 3f, 2.5f, 2f, 3f, 2.5f});
+
+                String[] headers = {"Path", "Method", "Parameters", "Return Type", "Method Type", "ForwardTo", "Security"};
+                for (String h : headers) {
+                    PdfPCell cell = new PdfPCell(new Phrase(h, tableHeaderFont));
+                    cell.setBackgroundColor(BaseColor.DARK_GRAY);
+                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    cell.setPadding(5);
+                    table.addCell(cell);
+                }
+
+                for (Method m : c.getDeclaredMethods()) {
+                    if (!m.isAnnotationPresent(com.mg.webrock.annotation.Path.class)) continue;
+
+                    com.mg.webrock.annotation.Path pathAnno = m.getAnnotation(com.mg.webrock.annotation.Path.class);
+                    String path = classPathAnno.value() + pathAnno.value();
+
+                    Class<?>[] params = m.getParameterTypes();
+                    StringBuilder paramStr = new StringBuilder();
+                    for (int i = 0; i < params.length; i++) {
+                        paramStr.append(params[i].getSimpleName());
+                        if (i < params.length - 1) paramStr.append(", ");
+                    }
+
+                    String returnType = m.getReturnType().getSimpleName();
+                    String methodType = "ANY";
+                    if (m.isAnnotationPresent(com.mg.webrock.annotation.Get.class)) methodType = "GET";
+                    else if (m.isAnnotationPresent(com.mg.webrock.annotation.Post.class)) methodType = "POST";
+
+                    String forwardTo = "";
+                    if (m.isAnnotationPresent(com.mg.webrock.annotation.Forward.class)) {
+                        com.mg.webrock.annotation.Forward fwd = m.getAnnotation(com.mg.webrock.annotation.Forward.class);
+                        forwardTo = fwd.value();
+                    }
+
+                    String security = (m.isAnnotationPresent(com.mg.webrock.annotation.SecuredAccess.class)) ? "Secured" : "None";
+
+                    table.addCell(new Phrase(path, tableCellFont));
+                    table.addCell(new Phrase(m.getName(), tableCellFont));
+                    table.addCell(new Phrase(paramStr.toString(), tableCellFont));
+                    table.addCell(new Phrase(returnType, tableCellFont));
+                    table.addCell(new Phrase(methodType, tableCellFont));
+                    table.addCell(new Phrase(forwardTo, tableCellFont));
+                    table.addCell(new Phrase(security, tableCellFont));
+                }
+
+                document.add(table);
+
+            } catch (Exception e) {
+                errorLogs.add("Error in file: " + f.getName() + " → " + e.getMessage());
+            }
+        }
+
+        // --- ERROR SUMMARY SECTION ---
+        if (!errorLogs.isEmpty()) {
+            document.newPage();
+            Paragraph errorHeader = new Paragraph("Error Summary", errorHeaderFont);
+            errorHeader.setAlignment(Element.ALIGN_CENTER);
+            errorHeader.setSpacingAfter(10f);
+            document.add(errorHeader);
+
+            for (String err : errorLogs) {
+                document.add(new Paragraph("• " + err, errorFont));
+            }
+        }
+
+        // --- FOOTER ---
         Paragraph footer = new Paragraph("Software By : Mridul Gehlot (CEO @ MGCompanies)", footerFont);
         footer.setAlignment(Element.ALIGN_CENTER);
         footer.setSpacingBefore(20f);

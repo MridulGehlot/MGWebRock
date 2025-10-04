@@ -164,10 +164,10 @@ resolve();
 .catch(error => console.log(error))
 });
 }
-summ()
+somemethod(arg0,arg1,arg2)
 {
 return new Promise(function(resolve,reject){
-fetch('http://localhost:8080/MGWebRock/schoolService/org/summer')
+fetch('http://localhost:8080/MGWebRock/schoolService/org/testing?pqr='+arg0+'&xyz='+arg1)
 .then(response => response.text())
 .then(data => {
 if(data!=='OK')
@@ -180,10 +180,10 @@ resolve();
 .catch(error => console.log(error))
 });
 }
-somemethod(arg0,arg1,arg2)
+summ()
 {
 return new Promise(function(resolve,reject){
-fetch('http://localhost:8080/MGWebRock/schoolService/org/testing?pqr='+arg0+'&xyz='+arg1)
+fetch('http://localhost:8080/MGWebRock/schoolService/org/summer')
 .then(response => response.text())
 .then(data => {
 if(data!=='OK')
